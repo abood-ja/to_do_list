@@ -1,25 +1,56 @@
 "use strict";
+
 const numberOfTasks = document.getElementById("statsText");
 const addBtn = document.getElementById("addBtn");
 const list = document.getElementById("todoList");
 const stateBtns = document.querySelector(".filters");
 const textField = document.getElementById("todoInput");
-const allStateBtns = [...document.querySelectorAll(".filter-btn")];
+const btnAll = document.querySelector('[data-filter="all"]'); // the btn that show all tasks
+const allStatesBtns = [...document.querySelectorAll(".filter-btn")]; // all the btns that decide the type of tasks showing
 const allTasks = [];
 function addNewTask(e) {
   const task = new Task(textField.value);
+  textField.value = "";
   allTasks.push(task);
+  allStatesBtns.forEach((ele) => {
+    ele.classList.remove("active");
+  });
+  btnAll.classList.add("active");
+  renderTasks(allTasks.map((task) => task.createTaskHTML()));
+}
+function deleteTask(e) {
+  const target = e.target;
+  if (!target.classList.contains("delete-btn")) return;
+  const activeBtn = document.querySelector(".filter-btn.active");
+  const task = target.closest(".todo-item");
+  const id = task.dataset.id;
+  const index = allTasks.findIndex((task) => task.id == id);
+  allTasks.splice(index, 1);
+  renderTasks(getTasksHTMLByType(activeBtn.dataset.filter));
+}
+function getTasksHTMLByType(type) {
+  const tasks = [];
+  if (type == "all") {
+    allTasks.forEach((task) => tasks.push(task.createTaskHTML()));
+  } else if (type == "active") {
+    allTasks.forEach((task) => {
+      if (!task.isChecked()) tasks.push(task.createTaskHTML());
+    });
+  } else {
+    allTasks.forEach((task) => {
+      if (task.isChecked()) tasks.push(task.createTaskHTML());
+    });
+  }
+  return tasks;
 }
 function renderTasks(filteredTasksHTML) {
   list.innerHTML = "";
-  filteredTasksHTML.forEach(
-    (task) => (list.innerHTML += task.createTaskHTML())
-  );
+  filteredTasksHTML.forEach((task) => (list.innerHTML += task));
 }
 function changeActiveBtn(e) {
   const target = e.target;
   if (!target.classList.contains("filter-btn")) return;
-  allStateBtns.forEach((ele) => {
+  allStatesBtns.forEach((ele) => {
     ele.classList.remove("active");
   });
   target.classList.add("active");
@@ -28,19 +59,7 @@ function showList(e) {
   const target = e.target;
   if (!target.classList.contains("filter-btn")) return;
   const type = target.dataset.filter;
-  let filteredTasksHTML = [];
-  if (type == "all") {
-    filteredTasksHTML = allTasks.map((task) => task.createTaskHTML());
-    renderTasks(filteredTasksHTML);
-  } else if (type == "active") {
-    const filteredTasks = allTasks.filter((task) => !task.isChecked());
-    filteredTasksHTML = filteredTasks.map((task) => task.createTaskHTML());
-    renderTasks(filteredTasksHTML);
-  } else {
-    const filteredTasks = allTasks.filter((task) => task.isChecked());
-    filteredTasksHTML = filteredTasks.map((task) => task.createTaskHTML());
-    renderTasks(filteredTasksHTML);
-  }
+  renderTasks(getTasksHTMLByType(type));
 }
 class Task {
   #id;
@@ -76,6 +95,7 @@ class Task {
     `;
   }
 }
+list.addEventListener("click", deleteTask);
 stateBtns.addEventListener("click", changeActiveBtn);
 stateBtns.addEventListener("click", showList);
 addBtn.addEventListener("click", addNewTask);
