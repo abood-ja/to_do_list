@@ -8,7 +8,8 @@ const textField = document.getElementById("todoInput");
 const btnAll = document.querySelector('[data-filter="all"]'); // the btn that show all tasks
 const allStatesBtns = [...document.querySelectorAll(".filter-btn")]; // all the btns that decide the type of tasks showing
 const allTasks = [];
-function addNewTask(e) {
+function addNewTask() {
+  if (textField.value === "") return;
   const task = new Task(textField.value);
   textField.value = "";
   allTasks.push(task);
@@ -17,6 +18,19 @@ function addNewTask(e) {
   });
   btnAll.classList.add("active");
   renderTasks(allTasks.map((task) => task.createTaskHTML()));
+  udateRemainingTasks();
+}
+function calcRemainingTasks() {
+  return allTasks.filter((task) => !task.isChecked()).length;
+}
+function udateRemainingTasks() {
+  numberOfTasks.textContent = `${calcRemainingTasks()} tasks remaining`;
+}
+function addNewTaskWithEnter(e) {
+  if (textField.value === "") return;
+  if (e.key === "Enter") {
+    addNewTask();
+  }
 }
 function deleteTask(e) {
   const target = e.target;
@@ -27,6 +41,25 @@ function deleteTask(e) {
   const index = allTasks.findIndex((task) => task.id == id);
   allTasks.splice(index, 1);
   renderTasks(getTasksHTMLByType(activeBtn.dataset.filter));
+  udateRemainingTasks();
+}
+function checkUncheckTask(e) {
+  const target = e.target;
+  if (!target.classList.contains("checkbox")) return;
+  const activeBtn = document.querySelector(".filter-btn.active");
+  const clickedTask = target.closest(".todo-item");
+  const id = clickedTask.dataset.id;
+  if (target.checked) {
+    const task = allTasks.find((task) => task.id == id);
+    task.checkTask();
+    renderTasks(getTasksHTMLByType(activeBtn.dataset.filter));
+    udateRemainingTasks();
+  } else if (!target.checked) {
+    const task = allTasks.find((task) => task.id == id);
+    task.unCheckTask();
+    renderTasks(getTasksHTMLByType(activeBtn.dataset.filter));
+    udateRemainingTasks();
+  }
 }
 function getTasksHTMLByType(type) {
   const tasks = [];
@@ -82,20 +115,27 @@ class Task {
   checkTask() {
     this.checked = true;
   }
+  unCheckTask() {
+    this.checked = false;
+  }
   isChecked() {
     return this.checked;
   }
   createTaskHTML() {
     return `
-        <li class="todo-item">
-          <input type="checkbox" class="checkbox" />
-          <span class="todo-text" data-id="${this.id}">${this.title}</span>
+        <li class="todo-item" data-id="${this.id}">
+          <input type="checkbox" class="checkbox"   ${
+            this.checked ? "checked" : ""
+          }/>
+          <span class="todo-text" >${this.title}</span>
           <button class="delete-btn">Delete</button>
         </li>
     `;
   }
 }
 list.addEventListener("click", deleteTask);
+list.addEventListener("change", checkUncheckTask);
 stateBtns.addEventListener("click", changeActiveBtn);
 stateBtns.addEventListener("click", showList);
 addBtn.addEventListener("click", addNewTask);
+textField.addEventListener("keydown", addNewTaskWithEnter);
