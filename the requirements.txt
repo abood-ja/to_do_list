@@ -1,0 +1,6 @@
+Add new tasks when clicking "Add" or pressing Enter
+Toggle task completion with checkboxes
+Delete tasks with the delete button
+Implement the filter functionality (show all/active/completed tasks)
+Update the stats counter to show remaining tasks
+Store your todos in an array
