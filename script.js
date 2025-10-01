@@ -7,7 +7,7 @@ const stateBtns = document.querySelector(".filters");
 const textField = document.getElementById("todoInput");
 const btnAll = document.querySelector('[data-filter="all"]'); // the btn that show all tasks
 const allStatesBtns = [...document.querySelectorAll(".filter-btn")]; // all the btns that decide the type of tasks showing
-const allTasks = [];
+let allTasks = [];
 function addNewTask() {
   if (textField.value === "") return;
   const task = new Task(textField.value);
@@ -17,6 +17,7 @@ function addNewTask() {
     ele.classList.remove("active");
   });
   btnAll.classList.add("active");
+  storeTasksInLocaleStorage();
   renderTasks(allTasks.map((task) => task.createTaskHTML()));
   udateRemainingTasks();
 }
@@ -40,6 +41,7 @@ function deleteTask(e) {
   const id = task.dataset.id;
   const index = allTasks.findIndex((task) => task.id == id);
   allTasks.splice(index, 1);
+  storeTasksInLocaleStorage();
   renderTasks(getTasksHTMLByType(activeBtn.dataset.filter));
   udateRemainingTasks();
 }
@@ -52,13 +54,32 @@ function checkUncheckTask(e) {
   if (target.checked) {
     const task = allTasks.find((task) => task.id == id);
     task.checkTask();
+    storeTasksInLocaleStorage();
     renderTasks(getTasksHTMLByType(activeBtn.dataset.filter));
     udateRemainingTasks();
   } else if (!target.checked) {
     const task = allTasks.find((task) => task.id == id);
     task.unCheckTask();
+    storeTasksInLocaleStorage();
+
     renderTasks(getTasksHTMLByType(activeBtn.dataset.filter));
     udateRemainingTasks();
+  }
+}
+function storeTasksInLocaleStorage() {
+  localStorage.setItem("tasks", JSON.stringify(allTasks));
+}
+function loadTasksFromLocaleStorage() {
+  const saved = JSON.parse(localStorage.getItem("tasks")) || [];
+  allTasks = saved.map((obj) => {
+    const task = new Task(obj._title);
+    task.checked = obj.checked;
+    task.changeId(obj.id);
+    return task;
+  });
+
+  if (allTasks.length > 0) {
+    renderTasks(allTasks.map((task) => task.createTaskHTML()));
   }
 }
 function getTasksHTMLByType(type) {
@@ -132,6 +153,9 @@ class Task {
         </li>
     `;
   }
+  changeId(id) {
+    this.#id = id;
+  }
 }
 list.addEventListener("click", deleteTask);
 list.addEventListener("change", checkUncheckTask);
@@ -139,3 +163,4 @@ stateBtns.addEventListener("click", changeActiveBtn);
 stateBtns.addEventListener("click", showList);
 addBtn.addEventListener("click", addNewTask);
 textField.addEventListener("keydown", addNewTaskWithEnter);
+loadTasksFromLocaleStorage();
